@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import Papa from 'papaparse';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-const ResponsiveGridLayout = WidthProvider(Responsive);
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-import { UploadCloud, LayoutDashboard, BarChart2, TrendingUp, PieChart as PieIcon, Activity } from 'lucide-react';
+import { UploadCloud, LayoutDashboard, BarChart2, TrendingUp, PieChart as PieIcon, Activity, Zap, Download } from 'lucide-react';
 
-
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#6366f1'];
 
@@ -27,21 +26,60 @@ export default function App() {
         skipEmptyLines: true,
         complete: (results) => {
           if (results.data && results.data.length > 0) {
-            setData(results.data);
-            const cols = Object.keys(results.data[0]);
-            setColumns(cols);
-            setXAxisCol(cols[0]);
-            
-            const numericCols = cols.filter(col => typeof results.data[0][col] === 'number');
-            if (numericCols.length > 0) {
-              setYAxisCol(numericCols[0]);
-            } else {
-              setYAxisCol(cols[1] || cols[0]);
-            }
+            setChartData(results.data);
           }
         }
       });
     }
+  };
+
+  const setChartData = (newData) => {
+    setData(newData);
+    const cols = Object.keys(newData[0]);
+    setColumns(cols);
+    setXAxisCol(cols[0]);
+    
+    const numericCols = cols.filter(col => typeof newData[0][col] === 'number');
+    if (numericCols.length > 0) {
+      setYAxisCol(numericCols[0]);
+    } else {
+      setYAxisCol(cols[1] || cols[0]);
+    }
+  };
+
+  const generateMockData = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const regions = ['North', 'South', 'East', 'West'];
+    
+    const mockData = [];
+    months.forEach((month, idx) => {
+      regions.forEach(region => {
+        mockData.push({
+          Month: month,
+          MonthIndex: idx + 1,
+          Region: region,
+          Revenue: Math.floor(Math.random() * 50000) + 10000,
+          ActiveUsers: Math.floor(Math.random() * 5000) + 500,
+          Satisfaction: parseFloat((Math.random() * 2 + 3).toFixed(1))
+        });
+      });
+    });
+    
+    setChartData(mockData);
+  };
+
+  const downloadCSV = () => {
+    if (data.length === 0) return;
+    const csv = Papa.unparse(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'dashboard_data.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const layout = [
@@ -73,11 +111,23 @@ export default function App() {
           <LayoutDashboard className="inline-block mr-3 mb-1" size={32} />
           DataViz Pro
         </h1>
-        <label className="upload-btn">
-          <UploadCloud size={20} />
-          Import CSV
-          <input type="file" accept=".csv" className="file-input" onChange={handleFileUpload} />
-        </label>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          {data.length > 0 && (
+            <button className="upload-btn" onClick={downloadCSV} style={{ background: 'var(--panel-bg)', color: 'var(--text-primary)', border: '1px solid var(--panel-border)' }}>
+              <Download size={20} />
+              CSV Download
+            </button>
+          )}
+          <button className="upload-btn" onClick={generateMockData} style={{ background: 'var(--chart-color-2)' }}>
+            <Zap size={20} />
+            Auto-Generate Data
+          </button>
+          <label className="upload-btn">
+            <UploadCloud size={20} />
+            Import CSV
+            <input type="file" accept=".csv" className="file-input" onChange={handleFileUpload} />
+          </label>
+        </div>
       </div>
 
       {data.length > 0 ? (
@@ -180,7 +230,7 @@ export default function App() {
         <div className="glass-panel empty-state">
           <UploadCloud size={64} />
           <h2>No Data Uploaded</h2>
-          <p>Please import a CSV file to visualize data.</p>
+          <p>Please import a CSV file or generate mock data to visualize.</p>
         </div>
       )}
     </div>
