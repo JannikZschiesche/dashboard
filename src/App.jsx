@@ -5,7 +5,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-import { UploadCloud, LayoutDashboard, BarChart2, TrendingUp, PieChart as PieIcon, Activity, Zap, Download } from 'lucide-react';
+import { UploadCloud, LayoutDashboard, BarChart2, TrendingUp, PieChart as PieIcon, Activity, Zap, Download, Table as TableIcon, AlertTriangle } from 'lucide-react';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -83,26 +83,48 @@ export default function App() {
   };
 
   const layout = [
-    { i: 'a', x: 0, y: 0, w: 6, h: 12 },
-    { i: 'b', x: 6, y: 0, w: 6, h: 12 },
-    { i: 'c', x: 0, y: 12, w: 6, h: 12 },
-    { i: 'd', x: 6, y: 12, w: 6, h: 12 },
+    { i: 'a', x: 0, y: 0, w: 6, h: 11 },
+    { i: 'b', x: 6, y: 0, w: 6, h: 11 },
+    { i: 'c', x: 0, y: 11, w: 6, h: 11 },
+    { i: 'd', x: 6, y: 11, w: 6, h: 11 },
+    { i: 'e', x: 0, y: 22, w: 12, h: 12 },
   ];
 
   const processedData = useMemo(() => {
-    return data.slice(0, 100).filter(item => item[xAxisCol] != null && item[yAxisCol] != null);
+    if (!data.length || !xAxisCol || !yAxisCol) return [];
+    
+    const isYNumeric = typeof data[0][yAxisCol] === 'number';
+    const aggregated = {};
+    
+    data.forEach(item => {
+      const xVal = item[xAxisCol];
+      const yVal = item[yAxisCol];
+      
+      if (xVal != null && yVal != null) {
+        const xKey = String(xVal);
+        if (!aggregated[xKey]) {
+          aggregated[xKey] = { [xAxisCol]: xVal, [yAxisCol]: 0 };
+        }
+        
+        if (isYNumeric) {
+          aggregated[xKey][yAxisCol] += Number(yVal);
+        } else {
+          aggregated[xKey][yAxisCol] += 1;
+        }
+      }
+    });
+    
+    return Object.values(aggregated).slice(0, 100);
   }, [data, xAxisCol, yAxisCol]);
 
   const pieData = useMemo(() => {
-    const counts = {};
-    data.slice(0, 100).forEach(item => {
-      const val = item[xAxisCol];
-      if (val != null) {
-        counts[val] = (counts[val] || 0) + (typeof item[yAxisCol] === 'number' ? item[yAxisCol] : 1);
-      }
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).slice(0, 10);
-  }, [data, xAxisCol, yAxisCol]);
+    return processedData.map(item => ({
+      name: String(item[xAxisCol]),
+      value: item[yAxisCol]
+    })).slice(0, 10);
+  }, [processedData, xAxisCol, yAxisCol]);
+
+  const isYWarning = data.length > 0 && yAxisCol && typeof data[0][yAxisCol] !== 'number';
 
   return (
     <div className="dashboard-container">
@@ -145,6 +167,12 @@ export default function App() {
                 {columns.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+            {isYWarning && (
+              <div className="warning-box">
+                <AlertTriangle size={16} />
+                Selected Y-Axis is text. Values are being counted instead of summed!
+              </div>
+            )}
           </div>
 
           <ResponsiveGridLayout
@@ -224,6 +252,27 @@ export default function App() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            <div key="e" className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="chart-title"><TableIcon size={18} color="#94a3b8" /> Raw Data View</div>
+              <div className="chart-container" style={{ overflow: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      {columns.map(c => <th key={c}>{c}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.slice(0, 100).map((row, i) => (
+                      <tr key={i}>
+                        {columns.map(c => <td key={c}>{row[c]}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </ResponsiveGridLayout>
         </>
       ) : (
