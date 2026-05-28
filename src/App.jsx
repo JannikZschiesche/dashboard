@@ -192,11 +192,11 @@ export default function App() {
   ]);
   
   const [layout, setLayout] = useState([
-    { i: 'w1', x: 0, y: 0, w: 6, h: 9 },
-    { i: 'w2', x: 6, y: 0, w: 6, h: 9 },
-    { i: 'w3', x: 0, y: 9, w: 6, h: 9 },
-    { i: 'w4', x: 6, y: 9, w: 6, h: 9 },
-    { i: 'data-table', x: 0, y: 18, w: 12, h: 10 },
+    { i: 'w1', x: 0, y: 0, w: 6, h: 10 },
+    { i: 'w2', x: 6, y: 0, w: 6, h: 10 },
+    { i: 'w3', x: 0, y: 10, w: 6, h: 10 },
+    { i: 'w4', x: 6, y: 10, w: 6, h: 10 },
+    { i: 'data-table', x: 0, y: 20, w: 12, h: 10 },
   ]);
   
   const handleFileUpload = (e) => {
@@ -268,13 +268,8 @@ export default function App() {
 
   const addWidget = () => {
     const newId = 'w' + Date.now();
-    setWidgets([...widgets, { id: newId, type: 'line', xAxis: null, yAxis: null }]);
-    // Find highest Y to append to bottom
-    let maxY = 0;
-    layout.forEach(l => {
-      if (l.y + l.h > maxY) maxY = l.y + l.h;
-    });
-    setLayout([...layout, { i: newId, x: 0, y: maxY, w: 6, h: 9 }]);
+    setWidgets([{ id: newId, type: 'line', xAxis: null, yAxis: null }, ...widgets]);
+    setLayout([{ i: newId, x: 0, y: 0, w: 6, h: 10 }, ...layout]);
   };
 
   const removeWidget = (id) => {
@@ -356,7 +351,8 @@ export default function App() {
             rowHeight={30}
             isDraggable={true}
             isResizable={true}
-            margin={[20, 20]}
+            draggableCancel=".widget-controls, .widget-settings-panel, select, button, input"
+            margin={[20, 30]}
           >
             {widgets.map(w => (
               <div key={w.id}>
